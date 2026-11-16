@@ -19,7 +19,7 @@
             <div class="w-10 h-10 bg-green-500 rounded-2xl flex items-center justify-center text-white text-xl font-bold shadow-md shadow-green-200">🤖</div>
             <div>
                 <h1 class="font-bold text-gray-900 text-lg leading-tight">ระบบผู้ช่วยจัดการงาน</h1>
-                <p class="text-xs text-gray-500">LINE OA & Kanban Board Sync (พร้อมระบบแท็ก & สรุปข้อมูล)</p>
+                <p class="text-xs text-gray-500">LINE OA & Kanban Board Sync (เพิ่มฟิลเตอร์วันที่สร้าง & เดดไลน์)</p>
             </div>
         </div>
         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -31,7 +31,7 @@
     <main class="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         <!-- Left: Chat Simulator -->
-        <div class="bg-white rounded-3xl border border-gray-200 shadow-sm flex flex-col h-[680px] overflow-hidden">
+        <div class="bg-white rounded-3xl border border-gray-200 shadow-sm flex flex-col h-[700px] overflow-hidden">
             <div class="bg-gray-50 px-5 py-4 border-b border-gray-200 flex items-center justify-between">
                 <div>
                     <h2 class="font-bold text-gray-800 text-sm">ห้องแชท LINE OA จำลอง</h2>
@@ -51,7 +51,7 @@
                             <li>Task: ชื่องาน @ชื่อคน เดดไลน์ #แท็ก</li>
                             <li>Tag: เพิ่มแท็ก [ชื่อแท็ก]</li>
                             <li>ดูงานทั้งหมด</li>
-                            <li>สรุปงานวันนี้ / สรุปงานตามเดดไลน์ / สรุปงาน [ชื่อคน]</li>
+                            <li>สรุปงานวันนี้ / สรุปงาน [ชื่อคน]</li>
                         </ul>
                     </div>
                 </div>
@@ -84,20 +84,29 @@
             </div>
         </div>
 
-        <!-- Right: Kanban Board & Filter Bar -->
-        <div class="lg:col-span-2 flex flex-col h-[680px]">
-            <div class="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <div>
-                    <h2 class="font-bold text-gray-900 text-lg">กระดานติดตามงาน (Kanban Board)</h2>
-                    <p class="text-xs text-gray-500">แสดงผลวันไทยและแท็กหมวดหมู่</p>
+        <!-- Right: Kanban Board & Advanced Filters -->
+        <div class="lg:col-span-2 flex flex-col h-[700px]">
+            <div class="mb-4 bg-white p-4 rounded-3xl border border-gray-200 shadow-xs flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="font-bold text-gray-900 text-base">กระดานติดตามงาน (Kanban Board)</h2>
+                        <p class="text-xs text-gray-500">กรองข้อมูลตามแท็ก ผู้รับผิดชอบ วันที่สร้าง และเดดไลน์</p>
+                    </div>
+                    <button onclick="resetFilters()" class="text-xs text-red-600 hover:bg-red-50 px-2.5 py-1 rounded-lg border border-red-100 transition">ล้างฟิลเตอร์</button>
                 </div>
                 <!-- Filter Bar -->
-                <div class="flex items-center gap-2">
-                    <select id="filter-tag" onchange="renderBoard()" class="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <select id="filter-tag" onchange="renderBoard()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500">
                         <option value="">🏷️ ทุกแท็ก</option>
                     </select>
-                    <select id="filter-assignee" onchange="renderBoard()" class="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <select id="filter-assignee" onchange="renderBoard()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500">
                         <option value="">👤 ทุกผู้รับผิดชอบ</option>
+                    </select>
+                    <select id="filter-created" onchange="renderBoard()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="">🕒 ทุกวันที่สร้าง</option>
+                    </select>
+                    <select id="filter-deadline" onchange="renderBoard()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="">📅 ทุกเดดไลน์</option>
                     </select>
                 </div>
             </div>
@@ -160,6 +169,7 @@
         ];
 
         function updateFilterOptions() {
+            // Tag Filter
             const tagSelect = document.getElementById('filter-tag');
             const currentTag = tagSelect.value;
             tagSelect.innerHTML = '<option value="">🏷️ ทุกแท็ก</option>';
@@ -167,6 +177,7 @@
                 tagSelect.innerHTML += `<option value="${tag}" ${currentTag === tag ? 'selected' : ''}>${tag}</option>`;
             });
 
+            // Assignee Filter
             const assigneeSelect = document.getElementById('filter-assignee');
             const currentAssignee = assigneeSelect.value;
             const assignees = [...new Set(tasks.map(t => t.assignee))];
@@ -174,12 +185,40 @@
             assignees.forEach(a => {
                 assigneeSelect.innerHTML += `<option value="${a}" ${currentAssignee === a ? 'selected' : ''}>${a}</option>`;
             });
+
+            // Created Date Filter
+            const createdSelect = document.getElementById('filter-created');
+            const currentCreated = createdSelect.value;
+            const createdDates = [...new Set(tasks.map(t => t.createdAt))];
+            createdSelect.innerHTML = '<option value="">🕒 ทุกวันที่สร้าง</option>';
+            createdDates.forEach(d => {
+                createdSelect.innerHTML += `<option value="${d}" ${currentCreated === d ? 'selected' : ''}>${d}</option>`;
+            });
+
+            // Deadline Filter
+            const deadlineSelect = document.getElementById('filter-deadline');
+            const currentDeadline = deadlineSelect.value;
+            const deadlines = [...new Set(tasks.map(t => t.deadline))];
+            deadlineSelect.innerHTML = '<option value="">📅 ทุกเดดไลน์</option>';
+            deadlines.forEach(dl => {
+                deadlineSelect.innerHTML += `<option value="${dl}" ${currentDeadline === dl ? 'selected' : ''}>${dl}</option>`;
+            });
+        }
+
+        function resetFilters() {
+            document.getElementById('filter-tag').value = '';
+            document.getElementById('filter-assignee').value = '';
+            document.getElementById('filter-created').value = '';
+            document.getElementById('filter-deadline').value = '';
+            renderBoard();
         }
 
         function renderBoard() {
             updateFilterOptions();
             const selectedTag = document.getElementById('filter-tag').value;
             const selectedAssignee = document.getElementById('filter-assignee').value;
+            const selectedCreated = document.getElementById('filter-created').value;
+            const selectedDeadline = document.getElementById('filter-deadline').value;
 
             const statuses = ['todo', 'inprogress', 'done'];
             statuses.forEach(status => {
@@ -189,6 +228,8 @@
                 let filtered = tasks.filter(t => t.status === status);
                 if (selectedTag) filtered = filtered.filter(t => t.tag === selectedTag);
                 if (selectedAssignee) filtered = filtered.filter(t => t.assignee === selectedAssignee);
+                if (selectedCreated) filtered = filtered.filter(t => t.createdAt === selectedCreated);
+                if (selectedDeadline) filtered = filtered.filter(t => t.deadline === selectedDeadline);
 
                 document.getElementById(`count-${status}`).innerText = filtered.length;
 
@@ -214,7 +255,6 @@
                     const statusColor = task.status === 'todo' ? 'bg-amber-100 text-amber-800' : task.status === 'inprogress' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
                     const statusText = task.status === 'todo' ? 'ต้องทำ' : task.status === 'inprogress' ? 'กำลังทำ' : 'เสร็จสิ้น';
 
-                    // สร้าง Dropdown เลือกแท็กบนการ์ด Kanban
                     let tagOptions = '';
                     availableTags.forEach(t => {
                         tagOptions += `<option value="${t}" ${task.tag === t ? 'selected' : ''}>${t}</option>`;
@@ -342,19 +382,13 @@
                 return;
             }
 
-            // 3. Summary Deadline
-            if (clean.includes('เดดไลน์')) {
-                renderChatTaskList(tasks, '📅 สรุปงานแยกตามเดดไลน์');
-                return;
-            }
-
-            // 4. View All
+            // 3. View All
             if (clean.includes('ดูงานทั้งหมด') || clean.includes('ดูทั้งหมด')) {
                 renderChatTaskList(tasks, '📋 รายการงานทั้งหมดในระบบ');
                 return;
             }
 
-            // 5. Summary by Assignee or Keyword
+            // 4. Summary by Assignee or Keyword
             if (clean.startsWith('สรุปงาน')) {
                 const keyword = clean.replace('สรุปงาน', '').trim();
                 const matched = tasks.filter(t => t.assignee.includes(keyword) || t.tag.includes(keyword) || t.title.includes(keyword));
@@ -362,7 +396,7 @@
                 return;
             }
 
-            // 6. Create Task: Task: ชื่องาน @ชื่อคน เดดไลน์ #แท็ก
+            // 5. Create Task: Task: ชื่องาน @ชื่อคน เดดไลน์ #แท็ก
             if (clean.toLowerCase().startsWith('task:')) {
                 const parts = clean.substring(5).split('@');
                 if (parts.length >= 2) {
