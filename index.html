@@ -3,456 +3,336 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LINE OA AI Task Assistant & Kanban Dashboard</title>
+    <title>Simple LINE OA Task Assistant & Kanban</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Font: Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Prompt', sans-serif; }
-        .line-bubble { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        .kanban-card { transition: all 0.2s ease; }
-        .kanban-card:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.05); }
+        .drag-over { background-color: #f0fdf4 !important; border-color: #86efac !important; }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 h-screen flex flex-col overflow-hidden">
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
 
-    <!-- Top Navigation Header -->
-    <header class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shadow-xs shrink-0">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
         <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm">
+            <div class="w-10 h-10 bg-green-500 rounded-2xl flex items-center justify-center text-white text-xl font-bold shadow-md shadow-green-200">
                 🤖
             </div>
             <div>
-                <h1 class="font-bold text-slate-800 text-base leading-tight">เปาบอย (AI Task Assistant)</h1>
-                <p class="text-xs text-slate-500">LINE OA & Kanban Live Sync Dashboard</p>
+                <h1 class="font-bold text-gray-900 text-lg leading-tight">ระบบผู้ช่วยจัดการงาน (Simple Task Assistant)</h1>
+                <p class="text-xs text-gray-500">LINE OA & Kanban Board Sync</p>
             </div>
         </div>
-        <div class="flex items-center space-x-3">
-            <div class="flex bg-slate-100 p-1 rounded-xl">
-                <button onclick="switchTab('all')" id="tab-all" class="px-4 py-1.5 text-xs font-medium rounded-lg bg-white shadow-xs text-emerald-600 transition-all">กระดานทั้งหมด</button>
-                <button onclick="switchTab('timeline')" id="tab-timeline" class="px-4 py-1.5 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 transition-all">ไทม์ไลน์เดดไลน์</button>
-                <button onclick="switchTab('team')" id="tab-team" class="px-4 py-1.5 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 transition-all">ภาระงานทีม</button>
-            </div>
-            <button onclick="exportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2 rounded-xl font-medium transition-all flex items-center space-x-1 shadow-sm">
-                <span>📥 ดาวน์โหลด CSV</span>
-            </button>
+        <div class="flex items-center space-x-2">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <span class="w-2 h-2 mr-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                ระบบพร้อมใช้งาน
+            </span>
         </div>
     </header>
 
-    <!-- Main Workspace -->
-    <div class="flex-1 flex overflow-hidden">
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <!-- Left Pane: LINE Chat Simulator -->
-        <div class="w-full md:w-[420px] bg-white border-r border-slate-200 flex flex-col shrink-0">
-            <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">💬 LINE OA Simulator</span>
-                <span class="text-[11px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">Online</span>
+        <!-- Left Column: LINE OA Chat Simulator (1 Span) -->
+        <div class="bg-white rounded-3xl border border-gray-200 shadow-sm flex flex-col h-[600px] overflow-hidden">
+            <div class="bg-gray-50 px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+                <div>
+                    <h2 class="font-bold text-gray-800 text-sm">ห้องแชท LINE OA จำลอง</h2>
+                    <p class="text-[11px] text-gray-500">พิมพ์คำสั่งเพื่อสร้างหรือเรียกดูงาน</p>
+                </div>
+                <span class="text-xs bg-green-50 text-green-600 font-semibold px-2.5 py-1 rounded-lg">Online</span>
             </div>
 
-            <!-- Chat Messages Area -->
-            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-50/50 text-sm">
-                <div class="flex items-start space-x-2">
-                    <div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-xs">🤖</div>
-                    <div class="bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200 line-bubble max-w-[85%] text-slate-700 text-xs leading-relaxed">
-                        สวัสดีครับ! ผม <b>เปาบอย</b> บอทผู้ช่วยจัดการงาน 🍻<br>
-                        พิมพ์สั่งงานได้ทันที เช่น:<br>
-                        <code class="bg-slate-100 px-1.5 py-0.5 rounded text-emerald-600 font-mono">Task:เช็กถังเบียร์@ป๊อก 25 พ.ย. 2569</code><br><br>
-                        หรือพิมพ์คำสั่งค้นหา:<br>
-                        • พิมพ์ชื่อคน (เช่น <code class="text-emerald-600 font-mono">ป๊อก</code>, <code class="text-emerald-600 font-mono">เติร์ด</code>)<br>
-                        • พิมพ์สถานะ (<code class="text-emerald-600 font-mono">ที่ต้องทำ</code>, <code class="text-emerald-600 font-mono">กำลังทำ</code>, <code class="text-emerald-600 font-mono">เสร็จสิ้น</code>)<br>
-                        • พิมพ์ <code class="text-emerald-600 font-mono">เดดไลน์</code> เพื่อเช็กงานทั้งหมด
+            <!-- Chat History -->
+            <div id="chat-box" class="flex-1 p-5 overflow-y-auto space-y-4 bg-gray-50/30 text-sm">
+                <div class="flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold shadow-xs shrink-0">🤖</div>
+                    <div class="bg-white p-4 rounded-2xl rounded-tl-none border border-gray-200 shadow-2xs text-gray-700 text-xs leading-relaxed space-y-2 max-w-[90%]">
+                        <p class="font-semibold text-gray-900">สวัสดีครับ! ผมเป็นบอทผู้ช่วยจัดการงาน 📋</p>
+                        <p>คุณสามารถพิมพ์สั่งงานได้ง่ายๆ ด้วยรูปแบบนี้ครับ:</p>
+                        <div class="bg-gray-100 p-2 rounded-lg font-mono text-green-700 text-[11px]">
+                            Task: ชื่องาน @ชื่อคน เดดไลน์<br>
+                            <span class="text-gray-500 font-sans">ตัวอย่าง:</span> Task: ทำสไลด์ประชุม @สมชาย พรุ่งนี้
+                        </div>
+                        <p class="text-gray-500 text-[11px]">หรือกดปุ่มลัดด้านล่างเพื่อทดลองใช้งานได้เลยครับ</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Quick Suggestion Chips -->
-            <div class="px-3 py-2 bg-white border-t border-slate-100 flex gap-1.5 overflow-x-auto text-[11px]">
-                <button onclick="sendQuickCommand('เดดไลน์')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full whitespace-nowrap transition">📅 เช็กเดดไลน์</button>
-                <button onclick="sendQuickCommand('ที่ต้องทำ')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full whitespace-nowrap transition">📌 ที่ต้องทำ</button>
-                <button onclick="sendQuickCommand('กำลังทำ')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full whitespace-nowrap transition">⚡ กำลังทำ</button>
-                <button onclick="sendQuickCommand('ป๊อก')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full whitespace-nowrap transition">👤 งานของป๊อก</button>
+            <!-- Quick Action Buttons -->
+            <div class="p-3 bg-white border-t border-gray-100 flex gap-2 overflow-x-auto">
+                <button onclick="quickCommand('Task: ตรวจสต็อกเครื่องดื่ม @สมชาย พรุ่งนี้')" class="bg-gray-100 hover:bg-green-50 hover:text-green-700 text-gray-600 px-3 py-1.5 rounded-xl text-xs font-medium transition whitespace-nowrap border border-gray-200">
+                    + ตัวอย่าง: ตรวจสต็อกสินค้า
+                </button>
+                <button onclick="quickCommand('ดูงานทั้งหมด')" class="bg-gray-100 hover:bg-green-50 hover:text-green-700 text-gray-600 px-3 py-1.5 rounded-xl text-xs font-medium transition whitespace-nowrap border border-gray-200">
+                    📋 ดูงานทั้งหมด
+                </button>
             </div>
 
-            <!-- Chat Input Box -->
-            <div class="p-3 bg-white border-t border-slate-200 flex items-center space-x-2">
-                <input type="text" id="chat-input" placeholder="พิมพ์คำสั่งหรือ Task:ชื่องาน@ชื่อคน เดดไลน์..." 
-                    class="flex-1 bg-slate-100 border border-slate-200 text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-emerald-500 focus:bg-white transition"
+            <!-- Input Box -->
+            <div class="p-4 bg-white border-t border-gray-200 flex items-center space-x-2">
+                <input type="text" id="chat-input" placeholder="พิมพ์คำสั่งที่นี่..." 
+                    class="flex-1 bg-gray-100 border border-gray-200 rounded-2xl px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition"
                     onkeypress="handleKeyPress(event)">
-                <button onclick="sendUserMessage()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition shadow-sm">
+                <button onclick="sendChat()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-2xl text-xs font-semibold shadow-md shadow-green-200 transition">
                     ส่ง
                 </button>
             </div>
         </div>
 
-        <!-- Right Pane: Kanban Dashboard & Analytics -->
-        <div class="flex-1 bg-slate-100 flex flex-col overflow-hidden">
-            
-            <!-- Kanban View -->
-            <div id="view-all" class="flex-1 p-6 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-x-auto">
+        <!-- Right Column: Simplified Kanban Board (2 Span) -->
+        <div class="lg:col-span-2 flex flex-col h-[600px]">
+            <div class="mb-4">
+                <h2 class="font-bold text-gray-900 text-lg">กระดานติดตามงาน (Kanban Board)</h2>
+                <p class="text-xs text-gray-500">ลากการ์ดเปลี่ยนสถานะ หรือกดปุ่มลูกศรเพื่อย้ายคอลัมน์ได้อย่างง่ายดาย</p>
+            </div>
+
+            <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 overflow-hidden">
                 
-                <!-- To Do Column -->
-                <div class="bg-slate-200/70 rounded-2xl p-4 flex flex-col h-full border border-slate-300/60 shadow-xs">
-                    <div class="flex items-center justify-between mb-3 px-1">
+                <!-- Column: To Do -->
+                <div class="bg-gray-100/80 rounded-3xl p-4 flex flex-col h-full border border-gray-200/60">
+                    <div class="flex items-center justify-between mb-3 px-2">
                         <div class="flex items-center space-x-2">
                             <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
-                            <h2 class="font-bold text-xs uppercase tracking-wider text-slate-700">ที่ต้องทำ (To Do)</h2>
+                            <h3 class="font-bold text-xs uppercase tracking-wider text-gray-700">ต้องทำ (To Do)</h3>
                         </div>
-                        <span id="count-todo" class="bg-white text-slate-600 px-2 py-0.5 rounded-full text-xs font-bold shadow-2xs">0</span>
+                        <span id="count-todo" class="bg-white text-gray-600 px-2.5 py-0.5 rounded-full text-xs font-bold border border-gray-200">0</span>
                     </div>
-                    <div id="col-todo" class="flex-1 overflow-y-auto space-y-3 pr-1 min-h-[200px]" ondragover="allowDrop(event)" ondrop="drop(event, 'todo')"></div>
+                    <div id="col-todo" class="flex-1 overflow-y-auto space-y-3 pr-1" ondragover="allowDrop(event)" ondrop="drop(event, 'todo')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)"></div>
                 </div>
 
-                <!-- In Progress Column -->
-                <div class="bg-slate-200/70 rounded-2xl p-4 flex flex-col h-full border border-slate-300/60 shadow-xs">
-                    <div class="flex items-center justify-between mb-3 px-1">
+                <!-- Column: In Progress -->
+                <div class="bg-gray-100/80 rounded-3xl p-4 flex flex-col h-full border border-gray-200/60">
+                    <div class="flex items-center justify-between mb-3 px-2">
                         <div class="flex items-center space-x-2">
                             <span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>
-                            <h2 class="font-bold text-xs uppercase tracking-wider text-slate-700">กำลังทำ (In Progress)</h2>
+                            <h3 class="font-bold text-xs uppercase tracking-wider text-gray-700">กำลังทำ (In Progress)</h3>
                         </div>
-                        <span id="count-inprogress" class="bg-white text-slate-600 px-2 py-0.5 rounded-full text-xs font-bold shadow-2xs">0</span>
+                        <span id="count-inprogress" class="bg-white text-gray-600 px-2.5 py-0.5 rounded-full text-xs font-bold border border-gray-200">0</span>
                     </div>
-                    <div id="col-inprogress" class="flex-1 overflow-y-auto space-y-3 pr-1 min-h-[200px]" ondragover="allowDrop(event)" ondrop="drop(event, 'inprogress')"></div>
+                    <div id="col-inprogress" class="flex-1 overflow-y-auto space-y-3 pr-1" ondragover="allowDrop(event)" ondrop="drop(event, 'inprogress')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)"></div>
                 </div>
 
-                <!-- Done Column -->
-                <div class="bg-slate-200/70 rounded-2xl p-4 flex flex-col h-full border border-slate-300/60 shadow-xs">
-                    <div class="flex items-center justify-between mb-3 px-1">
+                <!-- Column: Done -->
+                <div class="bg-gray-100/80 rounded-3xl p-4 flex flex-col h-full border border-gray-200/60">
+                    <div class="flex items-center justify-between mb-3 px-2">
                         <div class="flex items-center space-x-2">
-                            <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
-                            <h2 class="font-bold text-xs uppercase tracking-wider text-slate-700">เสร็จสิ้น (Done)</h2>
+                            <span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span>
+                            <h3 class="font-bold text-xs uppercase tracking-wider text-gray-700">เสร็จสิ้น (Done)</h3>
                         </div>
-                        <span id="count-done" class="bg-white text-slate-600 px-2 py-0.5 rounded-full text-xs font-bold shadow-2xs">0</span>
+                        <span id="count-done" class="bg-white text-gray-600 px-2.5 py-0.5 rounded-full text-xs font-bold border border-gray-200">0</span>
                     </div>
-                    <div id="col-done" class="flex-1 overflow-y-auto space-y-3 pr-1 min-h-[200px]" ondragover="allowDrop(event)" ondrop="drop(event, 'done')"></div>
+                    <div id="col-done" class="flex-1 overflow-y-auto space-y-3 pr-1" ondragover="allowDrop(event)" ondrop="drop(event, 'done')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)"></div>
                 </div>
 
             </div>
-
-            <!-- Timeline View (Hidden by default) -->
-            <div id="view-timeline" class="flex-1 p-6 overflow-y-auto hidden">
-                <div class="max-w-4xl mx-auto bg-white rounded-2xl p-6 shadow-xs border border-slate-200">
-                    <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center space-x-2">
-                        <span>📅 ไทม์ไลน์เดดไลน์งานทั้งหมด</span>
-                    </h2>
-                    <div id="timeline-list" class="space-y-3"></div>
-                </div>
-            </div>
-
-            <!-- Team Analytics View (Hidden by default) -->
-            <div id="view-team" class="flex-1 p-6 overflow-y-auto hidden">
-                <div class="max-w-4xl mx-auto bg-white rounded-2xl p-6 shadow-xs border border-slate-200">
-                    <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center space-x-2">
-                        <span>📊 สรุปภาระงานรายบุคคล & ออัตราความสำเร็จ</span>
-                    </h2>
-                    <div id="team-stats-list" class="space-y-4"></div>
-                </div>
-            </div>
-
         </div>
-    </div>
+
+    </main>
 
     <script>
-        // Initial Mock Tasks (Thai Language & Buddhist Era Dates)
+        // Initial Data
         let tasks = [
-            { id: '1', title: 'ตรวจเช็กถังเบียร์สดเยอรมันตะวันแดง', assignee: 'ป๊อก', deadline: '25 พ.ย. 2569', status: 'todo' },
-            { id: '2', title: 'ติดตั้งป้ายไฟ Light Box ร้านแซ่บยโส', assignee: 'เติร์ด', deadline: '28 พ.ย. 2569', status: 'inprogress' },
-            { id: '3', title: 'สรุปยอดขายสัปดาห์ที่ร้านข้าวใหม่ปลามัน', assignee: 'พี่โหน่ง', deadline: '20 พ.ย. 2569', status: 'done' }
+            { id: '1', title: 'ตรวจเช็กสต็อกเครื่องดื่ม', assignee: 'สมชาย', deadline: 'พรุ่งนี้', status: 'todo' },
+            { id: '2', title: 'เตรียมรายงานยอดขายประจำสัปดาห์', assignee: 'วิภา', deadline: '18 พ.ย.', status: 'inprogress' }
         ];
 
-        // Switch Tabs
-        function switchTab(tab) {
-            ['all', 'timeline', 'team'].forEach(t => {
-                document.getElementById(`view-${t}`).classList.add('hidden');
-                document.getElementById(`tab-${t}`).classList.remove('bg-white', 'shadow-xs', 'text-emerald-600');
-                document.getElementById(`tab-${t}`).classList.add('text-slate-600');
-            });
-            document.getElementById(`view-${tab}`).classList.remove('hidden');
-            document.getElementById(`tab-${tab}`).classList.add('bg-white', 'shadow-xs', 'text-emerald-600');
-            document.getElementById(`tab-${tab}`).classList.remove('text-slate-600');
-
-            if (tab === 'timeline') renderTimeline();
-            if (tab === 'team') renderTeamStats();
-        }
-
-        // Render Kanban Board
-        function renderKanban() {
-            ['todo', 'inprogress', 'done'].forEach(status => {
-                const container = document.getElementById(`col-${status}`);
-                container.innerHTML = '';
+        // Render Board
+        function renderBoard() {
+            const statuses = ['todo', 'inprogress', 'done'];
+            statuses.forEach(status => {
+                const col = document.getElementById(`col-${status}`);
+                col.innerHTML = '';
                 const filtered = tasks.filter(t => t.status === status);
                 document.getElementById(`count-${status}`).innerText = filtered.length;
 
                 filtered.forEach(task => {
                     const card = document.createElement('div');
-                    card.className = 'kanban-card bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs cursor-grab';
+                    card.className = 'bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs cursor-grab active:cursor-grabbing hover:shadow-md transition-all space-y-3';
                     card.draggable = true;
+                    card.id = `task-${task.id}`;
                     card.ondragstart = (e) => e.dataTransfer.setData('text/plain', task.id);
-                    
+
+                    // Determine Next/Prev Status Buttons
+                    let moveButtonHtml = '';
+                    if (task.status === 'todo') {
+                        moveButtonHtml = `<button onclick="moveTask('${task.id}', 'inprogress')" class="text-[11px] bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium px-3 py-1 rounded-lg transition flex items-center">เริ่มทำ ➡️</button>`;
+                    } else if (task.status === 'inprogress') {
+                        moveButtonHtml = `
+                            <button onclick="moveTask('${task.id}', 'todo')" class="text-[11px] bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium px-2.5 py-1 rounded-lg transition">⬅️ ย้อนกลับ</button>
+                            <button onclick="moveTask('${task.id}', 'done')" class="text-[11px] bg-green-50 text-green-700 hover:bg-green-100 font-medium px-3 py-1 rounded-lg transition flex items-center">เสร็จสิ้น ✅</button>
+                        `;
+                    } else {
+                        moveButtonHtml = `<button onclick="moveTask('${task.id}', 'inprogress')" class="text-[11px] bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium px-3 py-1 rounded-lg transition">⬅️ ทำต่อ</button>`;
+                    }
+
+                    const statusColor = task.status === 'todo' ? 'bg-amber-100 text-amber-800' : task.status === 'inprogress' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
+                    const statusText = task.status === 'todo' ? 'ต้องทำ' : task.status === 'inprogress' ? 'กำลังทำ' : 'เสร็จสิ้น';
+
                     card.innerHTML = `
-                        <div class="flex items-start justify-between gap-2 mb-1.5">
-                            <span class="text-xs font-semibold text-slate-800 break-words leading-snug flex-1">${escapeHTML(task.title)}</span>
-                            <button onclick="deleteTask('${task.id}')" class="text-slate-400 hover:text-rose-500 transition p-1" title="ลบงาน">🗑️</button>
+                        <div class="flex items-start justify-between">
+                            <span class="text-xs font-bold text-gray-900 leading-snug flex-1">${escapeHtml(task.title)}</span>
+                            <button onclick="deleteTask('${task.id}')" class="text-gray-300 hover:text-red-500 transition ml-2 p-1" title="ลบการ์ด">✕</button>
                         </div>
-                        <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
-                            <span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md font-medium">👤 ${escapeHTML(task.assignee)}</span>
-                            <span class="text-slate-400">📅 ${escapeHTML(task.deadline)}</span>
+                        <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+                            <span class="font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-md">👤 ${escapeHtml(task.assignee)}</span>
+                            <span class="text-gray-500">📅 ${escapeHtml(task.deadline)}</span>
+                            <span class="ml-auto font-semibold px-2 py-0.5 rounded-md ${statusColor}">${statusText}</span>
+                        </div>
+                        <div class="pt-2 border-t border-gray-100 flex items-center justify-end gap-1.5">
+                            ${moveButtonHtml}
                         </div>
                     `;
-                    container.appendChild(card);
+                    col.appendChild(card);
                 });
             });
         }
 
-        // Drag & Drop Handlers
-        function allowDrop(ev) { ev.preventDefault(); }
-        function drop(ev, newStatus) {
-            ev.preventDefault();
-            const taskId = ev.dataTransfer.getData('text/plain');
+        // Drag and Drop Logic
+        function allowDrop(e) { e.preventDefault(); }
+        function dragEnter(e) { if (e.target.classList.contains('overflow-y-auto')) e.target.classList.add('drag-over'); }
+        function dragLeave(e) { if (e.target.classList.contains('overflow-y-auto')) e.target.classList.remove('drag-over'); }
+        
+        function drop(e, newStatus) {
+            e.preventDefault();
+            const container = e.target.closest('.overflow-y-auto');
+            if (container) container.classList.remove('drag-over');
+            
+            const taskId = e.dataTransfer.getData('text/plain');
+            moveTask(taskId, newStatus);
+        }
+
+        // Move Task State Helper
+        function moveTask(taskId, newStatus) {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
                 task.status = newStatus;
-                renderKanban();
+                renderBoard();
             }
         }
 
-        // Chat Input Handlers
-        function handleKeyPress(e) { if (e.key === 'Enter') sendUserMessage(); }
-        function sendQuickCommand(text) {
-            document.getElementById('chat-input').value = text;
-            sendUserMessage();
+        // Delete Task
+        function deleteTask(taskId) {
+            tasks = tasks.filter(t => t.id !== taskId);
+            renderBoard();
         }
 
-        function sendUserMessage() {
+        // Chat Handlers
+        function handleKeyPress(e) { if (e.key === 'Enter') sendChat(); }
+        function quickCommand(text) {
+            document.getElementById('chat-input').value = text;
+            sendChat();
+        }
+
+        function sendChat() {
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
             if (!text) return;
 
-            appendChatBubble(text, true);
+            appendMessage(text, true);
             input.value = '';
 
-            setTimeout(() => processBotResponse(text), 400);
+            setTimeout(() => processCommand(text), 500);
         }
 
-        function appendChatBubble(text, isUser, isFlex = false, flexContent = '') {
-            const chatMessages = document.getElementById('chat-messages');
-            const bubbleDiv = document.createElement('div');
-            bubbleDiv.className = `flex items-start space-x-2 ${isUser ? 'justify-end' : ''}`;
+        function appendMessage(text, isUser, isHtml = false) {
+            const box = document.getElementById('chat-box');
+            const row = document.createElement('div');
+            row.className = `flex items-start space-x-3 ${isUser ? 'justify-end' : ''}`;
 
             if (!isUser) {
-                bubbleDiv.innerHTML = `<div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-xs">🤖</div>`;
+                row.innerHTML = `<div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold shadow-xs shrink-0">🤖</div>`;
             }
 
-            const contentDiv = document.createElement('div');
+            const bubble = document.createElement('div');
             if (isUser) {
-                contentDiv.className = `bg-emerald-600 text-white p-3 rounded-2xl rounded-tr-none max-w-[85%] text-xs leading-relaxed shadow-sm break-words`;
-                contentDiv.innerText = text;
+                bubble.className = 'bg-green-600 text-white p-3.5 rounded-2xl rounded-tr-none text-xs leading-relaxed max-w-[80%] shadow-md shadow-green-100';
+                bubble.innerText = text;
             } else {
-                contentDiv.className = `bg-white p-3.5 rounded-2xl rounded-tl-none border border-slate-200 line-bubble max-w-[90%] text-xs leading-relaxed text-slate-700`;
-                if (isFlex) {
-                    contentDiv.innerHTML = flexContent;
+                bubble.className = 'bg-white p-4 rounded-2xl rounded-tl-none border border-gray-200 text-gray-700 text-xs leading-relaxed max-w-[90%] shadow-2xs space-y-2';
+                if (isHtml) {
+                    bubble.innerHTML = text;
                 } else {
-                    contentDiv.innerText = text;
+                    bubble.innerText = text;
                 }
             }
 
-            bubbleDiv.appendChild(contentDiv);
-            chatMessages.appendChild(bubbleDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            row.appendChild(bubble);
+            box.appendChild(row);
+            box.scrollTop = box.scrollHeight;
         }
 
-        // AI Bot Logic & Commands Processing
-        function processBotResponse(query) {
-            const lowerQuery = query.toLowerCase();
+        // Command Parser
+        function processCommand(input) {
+            const clean = input.trim();
+            
+            if (clean.includes('ดูงานทั้งหมด')) {
+                renderChatTaskList(tasks, '📋 รายการงานทั้งหมดในระบบ');
+                return;
+            }
 
-            // 1. Create Task: Task:ชื่องาน@ชื่อคน เดดไลน์
-            if (lowerQuery.startsWith('task:')) {
-                const parts = query.substring(5).split('@');
+            if (clean.toLowerCase().startsWith('task:')) {
+                const parts = clean.substring(5).split('@');
                 if (parts.length >= 2) {
                     const title = parts[0].trim();
-                    const rest = parts[1].split(' ');
-                    const assignee = rest[0].trim();
-                    const deadline = rest.slice(1).join(' ').trim() || 'เร็วๆ นี้';
+                    const rest = parts[1].trim().split(/\s+/);
+                    const assignee = rest[0];
+                    const deadline = rest.slice(1).join(' ') || 'เร็วๆ นี้';
 
                     const newTask = {
                         id: Date.now().toString(),
-                        title,
-                        assignee,
-                        deadline,
+                        title: title || 'งานใหม่',
+                        assignee: assignee || 'ยังไม่ระบุ',
+                        deadline: deadline,
                         status: 'todo'
                     };
-                    tasks.push(newTask);
-                    renderKanban();
 
-                    appendChatBubble(`✅ บันทึกงานใหม่สำเร็จ!\n📌 ${title}\n👤 ผู้รับผิดชอบ: ${assignee}\n📅 เดดไลน์: ${deadline}`, false);
+                    tasks.push(newTask);
+                    renderBoard();
+
+                    appendMessage(`✅ เพิ่มงานสำเร็จ!\n📌 "${newTask.title}"\n👤 มอบหมาย: ${newTask.assignee}\n📅 กำหนดส่ง: ${newTask.deadline}`, false);
                     return;
                 }
             }
 
-            // 2. Deadline Check / Summary
-            if (lowerQuery.includes('เดดไลน์') || lowerQuery.includes('งานทั้งหมด')) {
-                showTaskListInChat(tasks, '📅 สรุปรายการเดดไลน์งานทั้งหมด');
-                return;
-            }
-
-            // 3. Status Filter
-            if (lowerQuery.includes('ที่ต้องทำ') || lowerQuery.includes('todo')) {
-                const filtered = tasks.filter(t => t.status === 'todo');
-                showTaskListInChat(filtered, '📌 รายการงานที่ต้องทำ (To Do)');
-                return;
-            }
-            if (lowerQuery.includes('กำลังทำ') || lowerQuery.includes('inprogress')) {
-                const filtered = tasks.filter(t => t.status === 'inprogress');
-                showTaskListInChat(filtered, '⚡ รายการงานที่กำลังดำเนินการ');
-                return;
-            }
-            if (lowerQuery.includes('เสร็จสิ้น') || lowerQuery.includes('done')) {
-                const filtered = tasks.filter(t => t.status === 'done');
-                showTaskListInChat(filtered, '✅ รายการงานที่เสร็จสิ้นแล้ว');
-                return;
-            }
-
-            // 4. Assignee Filter (Search by name)
-            const matchedAssigneeTasks = tasks.filter(t => t.assignee.toLowerCase().includes(lowerQuery));
-            if (matchedAssigneeTasks.length > 0) {
-                showTaskListInChat(matchedAssigneeTasks, `👤 รายการงานของ "${query}"`);
-                return;
-            }
-
-            // Fallback response
-            appendChatBubble(`ขออภัยครับ เปาบอยไม่เข้าใจคำสั่ง "${query}" ลองพิมพ์ เช่น "Task:ชื่องาน@ชื่อคน เดดไลน์", "เดดไลน์", หรือพิมพ์ชื่อคน/สถานะเพื่อค้นหาได้เลยครับ`, false);
+            appendMessage(`🤖 ขออภัยครับ ไม่พบคำสั่งที่ตรงกัน\nลองพิมพ์: "Task: ชื่องาน @ชื่อคน เดดไลน์" หรือ "ดูงานทั้งหมด"`, false);
         }
 
-        // Render Task Cards as Clean List inside LINE Chat
-        function showTaskListInChat(taskList, titleText) {
-            if (taskList.length === 0) {
-                appendChatBubble(`ไม่พบรายการงานตามเงื่อนไขครับ 📭`, false);
+        function renderChatTaskList(list, title) {
+            if (list.length === 0) {
+                appendMessage('📭 ยังไม่มีรายการงานในขณะนี้ครับ', false);
                 return;
             }
 
-            let html = `<div class="font-bold text-slate-800 mb-2">${titleText} (${taskList.length})</div><div class="space-y-2">`;
-            taskList.forEach(t => {
-                const statusBadge = t.status === 'todo' ? '<span class="text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">ที่ต้องทำ</span>' :
-                                   t.status === 'inprogress' ? '<span class="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">กำลังทำ</span>' :
-                                   '<span class="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">เสร็จสิ้น</span>';
-                
+            let html = `<p class="font-bold text-gray-900 border-b pb-2">${title}</p><div class="space-y-2 pt-1">`;
+            list.forEach(t => {
+                const statusBadge = t.status === 'todo' ? '🟡 ต้องทำ' : t.status === 'inprogress' ? '🔵 กำลังทำ' : '🟢 เสร็จสิ้น';
                 html += `
-                    <div class="bg-slate-50 border border-slate-200 p-2.5 rounded-xl space-y-1">
-                        <div class="font-semibold text-slate-800 break-words">${escapeHTML(t.title)}</div>
-                        <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/60">
-                            <span>👤 ${escapeHTML(t.assignee)} | 📅 ${escapeHTML(t.deadline)}</span>
-                            ${statusBadge}
-                        </div>
-                        <div class="flex gap-1 pt-1.5 justify-end">
-                            ${t.status !== 'inprogress' ? `<button onclick="updateTaskStatusFromChat('${t.id}', 'inprogress')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-0.5 rounded text-[10px] font-medium transition">⚡ ทำ</button>` : ''}
-                            ${t.status !== 'done' ? `<button onclick="updateTaskStatusFromChat('${t.id}', 'done')" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-2 py-0.5 rounded text-[10px] font-medium transition">✅ เสร็จ</button>` : ''}
-                            <button onclick="deleteTaskFromChat('${t.id}')" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-2 py-0.5 rounded text-[10px] font-medium transition">🗑️ ลบ</button>
+                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 space-y-1">
+                        <div class="font-semibold text-gray-800 text-xs">${escapeHtml(t.title)}</div>
+                        <div class="flex items-center justify-between text-[11px] text-gray-500">
+                            <span>👤 ${escapeHtml(t.assignee)} | 📅 ${escapeHtml(t.deadline)}</span>
+                            <span class="font-medium">${statusBadge}</span>
                         </div>
                     </div>
                 `;
             });
             html += `</div>`;
-            appendChatBubble('', false, true, html);
+            appendMessage(html, false, true);
         }
 
-        // Quick Actions from Chat Cards
-        function updateTaskStatusFromChat(id, newStatus) {
-            const task = tasks.find(t => t.id === id);
-            if (task) {
-                task.status = newStatus;
-                renderKanban();
-                appendChatBubble(`อัปเดตสถานะงาน "${task.title}" เรียบร้อยครับ ✨`, false);
-            }
+        function escapeHtml(str) {
+            return str.replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[tag] || tag));
         }
 
-        function deleteTask(id) {
-            tasks = tasks.filter(t => t.id !== id);
-            renderKanban();
-        }
-
-        function deleteTaskFromChat(id) {
-            tasks = tasks.filter(t => t.id !== id);
-            renderKanban();
-            appendChatBubble(`ลบรายการงานเรียบร้อยแล้วครับ 🗑️`, false);
-        }
-
-        // Timeline View Renderer
-        function renderTimeline() {
-            const container = document.getElementById('timeline-list');
-            container.innerHTML = '';
-            if (tasks.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400">ยังไม่มีงานในระบบ</p>';
-                return;
-            }
-            tasks.forEach(t => {
-                container.innerHTML += `
-                    <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                        <div>
-                            <div class="font-semibold text-xs text-slate-800">${escapeHTML(t.title)}</div>
-                            <div class="text-[11px] text-slate-500 mt-0.5">ผู้รับผิดชอบ: <b>${escapeHTML(t.assignee)}</b></div>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">📅 ${escapeHTML(t.deadline)}</span>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        // Team Stats View Renderer
-        function renderTeamStats() {
-            const container = document.getElementById('team-stats-list');
-            container.innerHTML = '';
-            
-            const teamMap = {};
-            tasks.forEach(t => {
-                if (!teamMap[t.assignee]) teamMap[t.assignee] = { total: 0, done: 0 };
-                teamMap[t.assignee].total++;
-                if (t.status === 'done') teamMap[t.assignee].done++;
-            });
-
-            if (Object.keys(teamMap).length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400">ยังไม่มีข้อมูลภาระงานทีม</p>';
-                return;
-            }
-
-            for (const [name, stats] of Object.entries(teamMap)) {
-                const percent = Math.round((stats.done / stats.total) * 100);
-                container.innerHTML += `
-                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                        <div class="flex items-center justify-between text-xs font-bold text-slate-800">
-                            <span>👤 ${escapeHTML(name)}</span>
-                            <span>สำเร็จ ${stats.done}/${stats.total} งาน (${percent}%)</span>
-                        </div>
-                        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                            <div class="bg-emerald-500 h-full rounded-full transition-all" style="width: ${percent}%"></div>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        // Export CSV Function
-        function exportCSV() {
-            let csv = '\uFEFFID,Title,Assignee,Deadline,Status\n';
-            tasks.forEach(t => {
-                csv += `"${t.id}","${t.title}","${t.assignee}","${t.deadline}","${t.status}"\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'line_tasks_export.csv';
-            a.click();
-        }
-
-        // Helper function to prevent XSS
-        function escapeHTML(str) {
-            return str.replace(/[&<>'"]/g, 
-                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-            );
-        }
-
-        // Initial load
-        renderKanban();
+        // Init
+        renderBoard();
     </script>
 </body>
 </html>
